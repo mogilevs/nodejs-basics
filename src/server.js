@@ -3,7 +3,9 @@ import pino from 'pino-http';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { env } from './utils/env.js';
-import { getAllStudents, getStudentById } from './services/students.js';
+import studentsRouter from './routers/sudents.js';
+import { errorHandler } from './middlewares/errorHandler.js';
+import { notFoundHandler } from './middlewares/notFoundHandler.js';
 
 dotenv.config();
 const PORT = Number(env('PORT', '3000'));
@@ -30,44 +32,11 @@ export const startServer = () => {
     });
   });
 
-  app.get('/students', async (req, res) => {
-    const students = await getAllStudents();
+  app.use('/students', studentsRouter);
 
-    res.status(200).json({
-      data: students,
-    });
-  });
+  app.use('*', notFoundHandler);
 
-  app.get('/students/:studentId', async (req, res) => {
-    const { studentId } = req.params;
-    const student = await getStudentById(studentId);
-
-   console.log(req.params);
-   console.log(res);
-    if (!student) {
-      res.status(404).json({
-        message: 'Student not found',
-      });
-      return;
-    }
-
-    res.status(200).json({
-      data: student,
-    });
-  });
-
-  app.use((err, req, res) => {
-    res.status(500).json({
-      message: 'Something went wrong',
-      error: err.message,
-    });
-  });
-
-  app.use('*', (req, res) => {
-    res.status(404).json({
-      message: 'Not found',
-    });
-  });
+  app.use(errorHandler);
 
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
